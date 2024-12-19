@@ -5,7 +5,8 @@ Custom component for lovelace which can be used as a card or an element on a pic
 
 This is a mod, created wit ai. All credits to the original creator. I spent a night with claude sonet and fixed the bugs and added alot of features you and i wanted. Complete example at the bottom
 
-![Circle Sensor Examples](circle-sensor.png)
+![Circle Sensor Examples](circle-sensor.png)![image](https://github.com/user-attachments/assets/81327d55-6160-4344-8da2-5f2b51d3c5b4)
+
 
 **Note: When including this file in your `ui-lovelace.yaml` you must use `type: module`**
 
