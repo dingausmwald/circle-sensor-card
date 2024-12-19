@@ -3,6 +3,8 @@
 
 Custom component for lovelace which can be used as a card or an element on a picture-elements card.
 
+This is a mod, created wit ai. All credits to the original creator. I spent a night with claude sonet and fixed the bugs and added alot of features you and i wanted. Complete example at the bottom
+
 ![Circle Sensor Examples](circle-sensor.png)
 
 **Note: When including this file in your `ui-lovelace.yaml` you must use `type: module`**
@@ -70,27 +72,88 @@ Add a custom card or custom element in your `ui-lovelace.yaml` using `type: cust
 ## Example
 ```yaml
 - type: custom:circle-sensor-card
-  entity: sensor.outside_temperature
-  max: 120
-  min: 30
-  stroke_width: 10
-  gradient: true
-  units: ' '
-  attribute: 'ambient'
-  attribute_max: 'feels_like'
-  show_max: true
-  font_style:
-    color: red
-    font-size: 1.5em
-    text-shadow: '2px 2px black'
-    font-family: 'Trebuchet MS'
+  # Required - The entity to display
+  entity: sensor.temperature
+  
+  # Optional - Display name above value
+  name: "Temperature"
+  
+  # Optional - Render as a card instead of element
+  show_card: true
+  
+  # Optional - Number of decimal places to show
+  decimals: 1
+  
+  # Value Range Configuration
+  # Can be static number, sensor (sensor:entity_id) or attribute (attr:attribute_name)
+  # Supports arithmetic operations (sensor:entity_id+5)
+  min: "sensor:input_number.min+5"
+  max: "sensor:input_number.max-2"
+  
+  # Optional - Custom unit or attribute to display
+  units: '°C'
+  attribute: temperature
+  
+  # Circle Appearance
+  stroke_width: 10          # Width of progress circle
+  stroke_color: blue        # Default color if no stops defined
+  stroke_bg_width: 2        # Width of background circle
+  stroke_bg_color: '#999999'  # Color of background circle
+  fill: 'rgba(255, 255, 255, .75)'  # Fill color inside circle
+  stroke_linecap: round     # Line end style: 'butt', 'round', 'square'
+  
+  # Visual Effects
+  use_gradient: true        # Enable gradient effect on circle
+  use_shadow: true         # Enable shadow effect
+  gradient: true           # Enable color blending between stops
+  
+  # Color Stops - Define colors at specific values
+  # Supports: "<min", "<min+5", "min+10", "<max-5", "max"
   color_stops:
-    50: '#55FF55'
-    75: '#5555FF'
-    100: '#FF5555'
+    "<min": blue           # Blue when value < min
+    "<min+5": yellow       # Yellow when value < (min + 5)
+    "min+10": green        # Green when value > (min + 10)
+    "max-5": purple        # Purple when value > (max - 5)
+    "max": red            # Red when value = max
+  
+  # Icon Configuration
+  icon: 'mdi:thermometer'
+  icon_position: 'middle'   # Position: 'left', 'right', 'middle', 'above', 'below'
+  icon_gradient: true      # Enable color gradient for icon
+  
+  # Icon Styling
+  icon_style:
+    color: blue            # Default icon color
+    '--mdc-icon-size': '24px'
+    opacity: '0.9'
+    filter: 'drop-shadow(0px 0px 2px rgba(0,0,0,0.2))'
+    margin: '6px'
+    # Icon Animation
+    animation:
+      duration: '2s'       # Time per rotation
+      timing: 'linear'     # Animation curve
+      iteration: 'infinite'  # Number of repeats
+  
+  # Icon Color Stops - Same syntax as circle color_stops
+  icon_color_stops:
+    "<min": blue
+    "min+5": green
+    "max": red
+  
+  # Text Styling
+  font_style:
+    value_size: '150%'     # Size of the value
+    unit_size: '75%'      # Size of the unit
+    color: 'red'
+    font-weight: 'bold'
+    font-family: 'Trebuchet MS'
+    text-shadow: '2px 2px black'
+    letter-spacing: '1px'
+    text-transform: 'uppercase'
+    opacity: '0.9'
+  
+  # Size & Position - Using CSS variables
   style:
-    top: 50%
-    left: 50%
-    width: 75px
-    height: 75px
+    --circle-sensor-width: 200px
+    --circle-sensor-height: 200px
 ```
