@@ -14,7 +14,7 @@ class CircleSensorCard extends LitElement {
   }
 
   render() {
-    return html`
+    const content = html`
       <div class="container" @click="${this._click}">
         <svg viewbox="0 0 200 200" id="svg">
           <!-- Definitionen für Filter und Gradienten -->
@@ -64,6 +64,8 @@ class CircleSensorCard extends LitElement {
         </span>
       </div>
     `;
+
+    return this.config?.show_card === false ? content : html`<ha-card>${content}</ha-card>`;
   }
 
   static get styles() {
@@ -74,6 +76,15 @@ class CircleSensorCard extends LitElement {
         position: relative;
         width: var(--circle-sensor-width, 100%);
         height: var(--circle-sensor-height, 100%);
+        background: var(--card-background-color, white);
+        border-radius: var(--ha-card-border-radius, 4px);
+        box-shadow: var(--ha-card-box-shadow, 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.2), 0 1px 5px 0 rgba(0,0,0,.12));
+      }
+
+      :host([no-card]) {
+        background: transparent;
+        border-radius: 0;
+        box-shadow: none;
       }
 
       .container {
@@ -173,6 +184,7 @@ class CircleSensorCard extends LitElement {
     if (!config.entity) {
       throw Error('No entity defined')
     }
+    
     this.config = config;
     
     if (this.hasUpdated) {
@@ -285,92 +297,79 @@ class CircleSensorCard extends LitElement {
     const convertedStops = {};
     const lessThanStops = {};
     
+    // Zuerst alle Stops in die entsprechenden Objekte konvertieren
     Object.entries(stops).forEach(([key, value]) => {
       if (key.startsWith('<')) {
-        // "Kleiner als" Stops mit arithmetischen Operationen
         const numValue = key.substring(1);
         if (numValue === 'min' && this.config.min) {
-          const minValue = this._getValue(this.config.min, hass);
+          const minValue = this._getBaseSensorValue(this.config.min, hass);
           lessThanStops[minValue] = value;
         } else if (numValue === 'max' && this.config.max) {
-          const maxValue = this._getValue(this.config.max, hass);
+          const maxValue = this._getBaseSensorValue(this.config.max, hass);
           lessThanStops[maxValue] = value;
         } else if (numValue.includes('min+') || numValue.includes('min-') || 
                    numValue.includes('max+') || numValue.includes('max-')) {
-          // Arithmetische Operationen für "kleiner als"
-          const parts = numValue.match(/(min|max)([\+\-])(\d+)/);
+          const parts = numValue.match(/(min|max)([\+\-])([\d.]+)/);
           if (parts) {
             const [, base, operator, number] = parts;
-            const baseValue = this._getValue(this.config[base], hass);
-            const offset = Number(number);
+            const baseValue = this._getBaseSensorValue(this.config[base], hass);
+            const offset = parseFloat(number);
             const calculatedKey = operator === '+' 
               ? baseValue + offset 
               : baseValue - offset;
             lessThanStops[calculatedKey] = value;
           }
         } else {
-          lessThanStops[Number(numValue)] = value;
+          lessThanStops[parseFloat(numValue)] = value;
         }
       } else {
-        // Normale Stops (wie bisher)
         if (key === 'min' && this.config.min) {
-          const minValue = this._getValue(this.config.min, hass);
+          const minValue = this._getBaseSensorValue(this.config.min, hass);
           convertedStops[minValue] = value;
         } else if (key === 'max' && this.config.max) {
-          const maxValue = this._getValue(this.config.max, hass);
+          const maxValue = this._getBaseSensorValue(this.config.max, hass);
           convertedStops[maxValue] = value;
         } else if (key.includes('min+') || key.includes('min-') || 
                    key.includes('max+') || key.includes('max-')) {
-          const parts = key.match(/(min|max)([\+\-])(\d+)/);
+          const parts = key.match(/(min|max)([\+\-])([\d.]+)/);
           if (parts) {
             const [, base, operator, number] = parts;
-            const baseValue = this._getValue(this.config[base], hass);
-            const offset = Number(number);
+            const baseValue = this._getBaseSensorValue(this.config[base], hass);
+            const offset = parseFloat(number);
             const calculatedKey = operator === '+' 
               ? baseValue + offset 
               : baseValue - offset;
             convertedStops[calculatedKey] = value;
           }
         } else {
-          convertedStops[Number(key)] = value;
+          convertedStops[parseFloat(key)] = value;
         }
       }
     });
     
-    // Wenn kein Gradient, prüfe beide Stop-Typen
+    // Wenn kein Gradient, prüfe die Stops in der richtigen Reihenfolge
     if ((isIcon && !this.config.icon_gradient) || (!isIcon && !this.config.gradient)) {
-      let selectedColor = null;
+      // Zuerst die normalen Stops prüfen (von hoch nach niedrig)
+      const normalValues = Object.keys(convertedStops).map(Number).sort((a, b) => b - a);
+      for (const stop of normalValues) {
+        if (state >= stop) {
+          return convertedStops[stop];
+        }
+      }
       
-      // Prüfe "kleiner als" Stops
-      const lessThanValues = Object.keys(lessThanStops).map(Number).sort((a, b) => b - a);  // Absteigend sortieren
+      // Dann die "kleiner als" Stops prüfen (von niedrig nach hoch)
+      const lessThanValues = Object.keys(lessThanStops).map(Number).sort((a, b) => a - b);
       for (const stop of lessThanValues) {
         if (state < stop) {
-          selectedColor = lessThanStops[stop];
-          break;
+          return lessThanStops[stop];
         }
-      }
-      
-      // Wenn kein "kleiner als" Stop gefunden wurde, prüfe normale Stops
-      if (!selectedColor) {
-        const normalValues = Object.keys(convertedStops).map(Number).sort((a, b) => b - a);  // Absteigend sortieren
-        for (const stop of normalValues) {
-          if (state > stop) {
-            selectedColor = convertedStops[stop];
-            break;
-          }
-        }
-      }
-      
-      // Wenn eine Farbe gefunden wurde, verwende sie
-      if (selectedColor) {
-        return selectedColor;
       }
       
       // Fallback auf die Standard-Farbe
       return this.config.stroke_color || '#03a9f4';
     }
     
-    // Mit Gradient - normale Interpolation wie bisher
+    // Mit Gradient - Interpolation zwischen den normalen Stops
     const sortedStops = Object.keys(convertedStops).map(Number).sort((a, b) => a - b);
     let start, end, val;
     const l = sortedStops.length;
@@ -379,16 +378,27 @@ class CircleSensorCard extends LitElement {
       return convertedStops[sortedStops[0]];
     }
     
+    // Wenn der Wert kleiner als der kleinste Stop ist
+    if (state < sortedStops[0]) {
+      return convertedStops[sortedStops[0]];
+    }
+    
+    // Wenn der Wert größer als der größte Stop ist
+    if (state > sortedStops[l - 1]) {
+      return convertedStops[sortedStops[l - 1]];
+    }
+    
     for (let i = 0; i < l - 1; i++) {
       const s1 = sortedStops[i];
       const s2 = sortedStops[i + 1];
-      if (state > s1 && state <= s2) {
+      if (state >= s1 && state <= s2) {
         [start, end] = [convertedStops[s1], convertedStops[s2]];
         val = this._calculateValueBetween(s1, s2, state);
         return this._getGradientValue(start, end, val);
       }
     }
     
+    // Dieser Code sollte nie erreicht werden, aber als Fallback
     return convertedStops[sortedStops[0]];
   }
 
@@ -564,6 +574,12 @@ class CircleSensorCard extends LitElement {
     super.updated(changedProps);
     if (changedProps.has('config')) {
       this._applyConfig();
+      // Set no-card attribute based on show_card config
+      if (this.config.show_card === false) {
+        this.setAttribute('no-card', '');
+      } else {
+        this.removeAttribute('no-card');
+      }
     }
   }
 
@@ -573,11 +589,11 @@ class CircleSensorCard extends LitElement {
     if (typeof value === 'string') {
       // Prüfen auf arithmetische Operationen mit Sensoren
       if (value.includes('sensor:') && (value.includes('+') || value.includes('-'))) {
-        const parts = value.match(/sensor:([^+\-]+)([\+\-])(\d+)/);
+        const parts = value.match(/sensor:([^+\-]+)([\+\-])([\d.]+)/);
         if (parts) {
           const [, entityId, operator, number] = parts;
           const baseValue = Number(hass?.states[entityId.trim()]?.state) || 0;
-          const offset = Number(number);
+          const offset = parseFloat(number);
           return operator === '+' ? baseValue + offset : baseValue - offset;
         }
       }
@@ -591,10 +607,10 @@ class CircleSensorCard extends LitElement {
       // Attribut-Referenz
       if (value.startsWith('attr:')) {
         const attr = value.substr(5);
-        return this.state?.attributes[attr] || 0;
+        return Number(this.state?.attributes[attr]) || 0;
       }
       
-      return Number(value) || 0;
+      return parseFloat(value) || 0;
     }
     
     return Number(value) || 0;
@@ -630,5 +646,18 @@ class CircleSensorCard extends LitElement {
       circle.setAttribute('stroke', stroke);
     }
   }
+
+  // Neue Hilfsfunktion zum Extrahieren des Basis-Sensorwerts
+  _getBaseSensorValue(value, hass) {
+    if (typeof value === 'string' && value.startsWith('sensor:')) {
+      const match = value.match(/sensor:([^+\-]+)/);
+      if (match) {
+        const entityId = match[1].trim();
+        return Number(hass?.states[entityId]?.state) || 0;
+      }
+    }
+    return this._getValue(value, hass);
+  }
 }
 customElements.define('circle-sensor-card', CircleSensorCard);
+
