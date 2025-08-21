@@ -48,6 +48,7 @@ class CircleSensorCard extends LitElement {
             stroke-linecap="${this.config.stroke_linecap || 'butt'}"
             transform="rotate(-90 100 100)"/>
           <circle id="circle" 
+            class="${this._getEffectClasses('ring')}"
             cx="50%" 
             cy="50%" 
             r="45%"
@@ -57,7 +58,8 @@ class CircleSensorCard extends LitElement {
             stroke-width="${this.config.stroke_width || 6}"
             stroke-linecap="${this.config.stroke_linecap || 'butt'}"
             filter="${this.config.use_shadow ? 'url(#circle-shadow)' : 'none'}"
-            transform="rotate(-90 100 100)"/>
+            transform="rotate(-90 100 100)"
+            style="${this._getEffectStyles('ring')}"/>
         </svg>
         <span class="labelContainer">
           ${this._renderContent()}
@@ -85,6 +87,13 @@ class CircleSensorCard extends LitElement {
         background: transparent;
         border-radius: 0;
         box-shadow: none;
+      }
+
+      ha-card {
+        width: var(--circle-sensor-width, 100%);
+        height: var(--circle-sensor-height, 100%);
+        flex: 0 0 auto;
+        display: block;
       }
 
       .container {
@@ -131,6 +140,10 @@ class CircleSensorCard extends LitElement {
         font-size: 100%;
       }
       
+      #name {
+        font-size: var(--name-font-size, 100%);
+      }
+      
       .unit {
         font-size: 75%;
       }
@@ -158,6 +171,180 @@ class CircleSensorCard extends LitElement {
                   var(--rotation-delay, 0s)               /* Verzögerung */
                   var(--rotation-iteration, infinite)     /* Wiederholungen */
                   var(--rotation-direction, normal);      /* Richtung */
+      }
+
+      /* Rotate Effect für alle Elemente */
+      .effect-rotate {
+        animation: rotate var(--effect-duration, 2s) 
+                  var(--effect-timing, linear) 
+                  var(--effect-delay, 0s) 
+                  var(--effect-iteration, infinite) 
+                  var(--effect-direction, normal);
+      }
+
+      /* Wobble Effect - Taumeln/Pendeln */
+      @keyframes wobble {
+        0%, 100% { transform: rotate(var(--effect-rotate-min, -15deg)); }
+        50% { transform: rotate(var(--effect-rotate-max, 15deg)); }
+      }
+
+      .effect-wobble {
+        animation: wobble var(--effect-duration, 1s) 
+                  var(--effect-timing, ease-in-out) 
+                  var(--effect-delay, 0s) 
+                  var(--effect-iteration, infinite) 
+                  var(--effect-direction, normal);
+      }
+
+      /* Pulse Effect - Scale and opacity animation */
+      @keyframes pulse {
+        0% { transform: scale(var(--effect-scale-min, 0.9)); opacity: var(--effect-opacity-max, 1.0); }
+        50% { transform: scale(var(--effect-scale-max, 1.1)); opacity: var(--effect-opacity-min, 0.7); }
+        100% { transform: scale(var(--effect-scale-min, 0.9)); opacity: var(--effect-opacity-max, 1.0); }
+      }
+
+      .effect-pulse {
+        animation: pulse var(--effect-duration, 1s) 
+                  var(--effect-timing, ease-in-out) 
+                  var(--effect-delay, 0s) 
+                  var(--effect-iteration, infinite) 
+                  var(--effect-direction, normal);
+      }
+
+      /* Shake Effect - horizontales Schütteln */
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+        20%, 40%, 60%, 80% { transform: translateX(2px); }
+      }
+      
+      .effect-shake {
+        animation: shake var(--effect-duration, 0.5s) 
+                  var(--effect-timing, ease-in-out) 
+                  var(--effect-delay, 0s) 
+                  var(--effect-iteration, infinite) 
+                  var(--effect-direction, normal);
+      }
+
+      /* Bounce Effect - Hüpfbewegung */
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+      }
+
+      .effect-bounce {
+        animation: bounce var(--effect-duration, 1s) 
+                  var(--effect-timing, ease-in-out) 
+                  var(--effect-delay, 0s) 
+                  var(--effect-iteration, infinite) 
+                  var(--effect-direction, normal);
+      }
+
+      /* Fade Effect - Übergang zwischen zwei Farben */
+      @keyframes fade-colors {
+        0%, 100% { color: var(--effect-color1, currentColor); }
+        50% { color: var(--effect-color2, currentColor); }
+      }
+
+      .effect-fade {
+        animation: fade-colors var(--effect-duration, 2s) 
+                  var(--effect-timing, ease-in-out) 
+                  var(--effect-delay, 0s) 
+                  var(--effect-iteration, infinite) 
+                  var(--effect-direction, normal);
+      }
+
+
+
+      /* Ring-spezifische Effekte */
+
+      .effect-pulse#circle {
+        animation: pulse-ring var(--effect-duration, 1s) 
+                  var(--effect-timing, ease-in-out) 
+                  var(--effect-delay, 0s) 
+                  var(--effect-iteration, infinite) 
+                  var(--effect-direction, normal);
+      }
+
+      @keyframes pulse-ring {
+        0% { stroke-width: var(--effect-scale-min, 6); opacity: var(--effect-opacity-max, 1.0); }
+        50% { stroke-width: var(--effect-scale-max, 10); opacity: var(--effect-opacity-min, 0.7); }
+        100% { stroke-width: var(--effect-scale-min, 6); opacity: var(--effect-opacity-max, 1.0); }
+      }
+
+      /* Ring Shake - angepasst für gedrehten Circle (Y wird zu X) */
+      @keyframes shake-ring {
+        0%, 100% { transform: rotate(-90deg) translateY(0); }
+        10%, 30%, 50%, 70%, 90% { transform: rotate(-90deg) translateY(-2px); }
+        20%, 40%, 60%, 80% { transform: rotate(-90deg) translateY(2px); }
+      }
+
+      .effect-shake#circle {
+        transform-origin: 50% 50%;
+        animation: shake-ring var(--effect-duration, 0.5s) 
+                  var(--effect-timing, ease-in-out) 
+                  var(--effect-delay, 0s) 
+                  var(--effect-iteration, infinite) 
+                  var(--effect-direction, normal);
+      }
+
+      /* Ring Bounce - angepasst für gedrehten Circle (X wird zu Y) */
+      @keyframes bounce-ring {
+        0%, 100% { transform: rotate(-90deg) translateX(0); }
+        50% { transform: rotate(-90deg) translateX(-5px); }
+      }
+
+      .effect-bounce#circle {
+        transform-origin: 50% 50%;
+        animation: bounce-ring var(--effect-duration, 1s) 
+                  var(--effect-timing, ease-in-out) 
+                  var(--effect-delay, 0s) 
+                  var(--effect-iteration, infinite) 
+                  var(--effect-direction, normal);
+      }
+
+      /* Ring Farbwechsel */
+      @keyframes ring-colors {
+        0%, 100% { stroke: var(--effect-color1, currentColor); }
+        50% { stroke: var(--effect-color2, currentColor); }
+      }
+
+      .effect-fade#circle {
+        animation: ring-colors var(--effect-duration, 2s) 
+                  var(--effect-timing, ease-in-out) 
+                  var(--effect-delay, 0s) 
+                  var(--effect-iteration, infinite) 
+                  var(--effect-direction, normal);
+      }
+
+      /* Ring Rotate - angepasst für gedrehten Circle */
+      @keyframes rotate-ring {
+        from { transform: rotate(-90deg); }
+        to { transform: rotate(270deg); }
+      }
+
+      .effect-rotate#circle {
+        transform-origin: 50% 50%;
+        animation: rotate-ring var(--effect-duration, 2s) 
+                  var(--effect-timing, linear) 
+                  var(--effect-delay, 0s) 
+                  var(--effect-iteration, infinite) 
+                  var(--effect-direction, normal);
+      }
+
+      /* Ring Wobble - angepasst für gedrehten Circle */
+      @keyframes wobble-ring {
+        0%, 100% { transform: rotate(calc(-90deg + var(--effect-rotate-min, -15deg))); }
+        50% { transform: rotate(calc(-90deg + var(--effect-rotate-max, 15deg))); }
+      }
+
+      .effect-wobble#circle {
+        transform-origin: 50% 50%;
+        animation: wobble-ring var(--effect-duration, 1s) 
+                  var(--effect-timing, ease-in-out) 
+                  var(--effect-delay, 0s) 
+                  var(--effect-iteration, infinite) 
+                  var(--effect-direction, normal);
       }
       
       .icon:hover {
@@ -230,6 +417,8 @@ class CircleSensorCard extends LitElement {
           this.style.setProperty('--value-font-size', this.config.font_style.value_size);
         } else if (prop === 'unit_size') {
           this.style.setProperty('--unit-font-size', this.config.font_style.unit_size);
+        } else if (prop === 'name_size') {
+          this.style.setProperty('--name-font-size', this.config.font_style.name_size);
         } else {
           container.style.setProperty(prop, this.config.font_style[prop]);
         }
@@ -492,28 +681,334 @@ class CircleSensorCard extends LitElement {
       .join(';');
   }
 
+  _getIconByValue() {
+    if (!this.state || !this.config.icon_stops || !this._hass) {
+      return this.config.icon;
+    }
+
+    const value = this.config.attribute 
+      ? this.state.attributes[this.config.attribute] 
+      : this.state.state;
+
+    const convertedStops = {};
+    const lessThanStops = {};
+    
+    // Icon stops konvertieren (gleiche Logik wie color_stops)
+    Object.entries(this.config.icon_stops).forEach(([key, iconValue]) => {
+      if (key.startsWith('<')) {
+        const numValue = key.substring(1);
+        if (numValue === 'min' && this.config.min) {
+          const minValue = this._getBaseSensorValue(this.config.min, this._hass);
+          lessThanStops[minValue] = iconValue;
+        } else if (numValue === 'max' && this.config.max) {
+          const maxValue = this._getBaseSensorValue(this.config.max, this._hass);
+          lessThanStops[maxValue] = iconValue;
+        } else if (numValue.includes('min+') || numValue.includes('min-') || 
+                   numValue.includes('max+') || numValue.includes('max-')) {
+          const parts = numValue.match(/(min|max)([\+\-])([\d.]+)/);
+          if (parts) {
+            const [, base, operator, number] = parts;
+            const baseValue = this._getBaseSensorValue(this.config[base], this._hass);
+            const offset = parseFloat(number);
+            const calculatedKey = operator === '+' 
+              ? baseValue + offset 
+              : baseValue - offset;
+            lessThanStops[calculatedKey] = iconValue;
+          }
+        } else {
+          lessThanStops[parseFloat(numValue)] = iconValue;
+        }
+      } else {
+        if (key === 'min' && this.config.min) {
+          const minValue = this._getBaseSensorValue(this.config.min, this._hass);
+          convertedStops[minValue] = iconValue;
+        } else if (key === 'max' && this.config.max) {
+          const maxValue = this._getBaseSensorValue(this.config.max, this._hass);
+          convertedStops[maxValue] = iconValue;
+        } else if (key.includes('min+') || key.includes('min-') || 
+                   key.includes('max+') || key.includes('max-')) {
+          const parts = key.match(/(min|max)([\+\-])([\d.]+)/);
+          if (parts) {
+            const [, base, operator, number] = parts;
+            const baseValue = this._getBaseSensorValue(this.config[base], this._hass);
+            const offset = parseFloat(number);
+            const calculatedKey = operator === '+' 
+              ? baseValue + offset 
+              : baseValue - offset;
+            convertedStops[calculatedKey] = iconValue;
+          }
+        } else {
+          convertedStops[parseFloat(key)] = iconValue;
+        }
+      }
+    });
+    
+    // Normale Stops prüfen (von hoch nach niedrig)
+    const normalValues = Object.keys(convertedStops).map(Number).sort((a, b) => b - a);
+    for (const stop of normalValues) {
+      if (value >= stop) {
+        return convertedStops[stop];
+      }
+    }
+    
+    // "Kleiner als" Stops prüfen (von niedrig nach hoch)
+    const lessThanValues = Object.keys(lessThanStops).map(Number).sort((a, b) => a - b);
+    for (const stop of lessThanValues) {
+      if (value < stop) {
+        return lessThanStops[stop];
+      }
+    }
+    
+    return this.config.icon;
+  }
+
+  _getLegacyIconEffectStyles() {
+    const iconStyle = this.config.icon_style;
+    if (!iconStyle) return '';
+
+    const styles = [];
+    const animation = iconStyle.animation || {};
+    
+    // Alle Parameter aus animation Objekt
+    const duration = animation.duration;
+    const timing = animation.timing || 'linear';
+    const delay = animation.delay || '0s';
+    const iteration = animation.iteration || 'infinite';
+    const direction = animation.direction || 'normal';
+    
+    if (duration) {
+      styles.push(`--effect-duration: ${duration}`);
+    }
+    if (timing) {
+      styles.push(`--effect-timing: ${timing}`);
+    }
+    if (delay) {
+      styles.push(`--effect-delay: ${delay}`);
+    }
+    if (iteration) {
+      styles.push(`--effect-iteration: ${iteration}`);
+    }
+    if (direction) {
+      styles.push(`--effect-direction: ${direction}`);
+    }
+    if (animation.color1) {
+      styles.push(`--effect-color1: ${animation.color1}`);
+    }
+    if (animation.color2) {
+      styles.push(`--effect-color2: ${animation.color2}`);
+    }
+    if (animation.opacity_min) {
+      styles.push(`--effect-opacity-min: ${animation.opacity_min}`);
+    }
+    if (animation.opacity_max) {
+      styles.push(`--effect-opacity-max: ${animation.opacity_max}`);
+    }
+    if (animation.scale_min) {
+      styles.push(`--effect-scale-min: ${animation.scale_min}`);
+    }
+    if (animation.scale_max) {
+      styles.push(`--effect-scale-max: ${animation.scale_max}`);
+    }
+    if (animation.rotate_min) {
+      styles.push(`--effect-rotate-min: ${animation.rotate_min}deg`);
+    }
+    if (animation.rotate_max) {
+      styles.push(`--effect-rotate-max: ${animation.rotate_max}deg`);
+    }
+
+    return styles.join('; ');
+  }
+
+  _getEffectClasses(element) {
+    // Zuerst prüfen ob es effect_stops gibt
+    const effectConfig = this._getEffectByValue(element);
+    if (!effectConfig) return '';
+
+    const classes = [];
+    
+    if (effectConfig.type) {
+      classes.push(`effect-${effectConfig.type}`);
+      if (effectConfig.type === 'rotate') {
+        classes.push('rotating');
+      }
+    }
+
+    return classes.join(' ');
+  }
+
+  _getEffectStyles(element) {
+    // Zuerst prüfen ob es effect_stops gibt
+    const effectConfig = this._getEffectByValue(element);
+    if (!effectConfig) return '';
+
+    const styles = [];
+    
+    if (effectConfig.duration) {
+      styles.push(`--effect-duration: ${effectConfig.duration}`);
+    }
+    if (effectConfig.timing) {
+      styles.push(`--effect-timing: ${effectConfig.timing}`);
+    }
+    if (effectConfig.delay) {
+      styles.push(`--effect-delay: ${effectConfig.delay}`);
+    }
+    if (effectConfig.iteration) {
+      styles.push(`--effect-iteration: ${effectConfig.iteration}`);
+    }
+    if (effectConfig.direction) {
+      styles.push(`--effect-direction: ${effectConfig.direction}`);
+    }
+    if (effectConfig.color1) {
+      styles.push(`--effect-color1: ${effectConfig.color1}`);
+    }
+    if (effectConfig.color2) {
+      styles.push(`--effect-color2: ${effectConfig.color2}`);
+    }
+    if (effectConfig.opacity_min) {
+      styles.push(`--effect-opacity-min: ${effectConfig.opacity_min}`);
+    }
+    if (effectConfig.opacity_max) {
+      styles.push(`--effect-opacity-max: ${effectConfig.opacity_max}`);
+    }
+    if (effectConfig.scale_min) {
+      styles.push(`--effect-scale-min: ${effectConfig.scale_min}`);
+    }
+    if (effectConfig.scale_max) {
+      styles.push(`--effect-scale-max: ${effectConfig.scale_max}`);
+    }
+    if (effectConfig.rotate_min) {
+      styles.push(`--effect-rotate-min: ${effectConfig.rotate_min}deg`);
+    }
+    if (effectConfig.rotate_max) {
+      styles.push(`--effect-rotate-max: ${effectConfig.rotate_max}deg`);
+    }
+
+    return styles.join('; ');
+  }
+
+    _getEffectByValue(element) {
+    // Nur Effekte wenn effect_stops definiert sind
+    if (!this.config.effect_stops?.[element]) {
+      return null;
+    }
+
+    if (this.state && this._hass) {
+    const value = this.config.attribute 
+      ? this.state.attributes[this.config.attribute] 
+      : this.state.state;
+
+      const convertedStops = {};
+      const lessThanStops = {};
+      
+            // Effect stops konvertieren (gleiche Logik wie color_stops)
+      Object.entries(this.config.effect_stops[element]).forEach(([key, effectConfig]) => {
+      if (key.startsWith('<')) {
+        const numValue = key.substring(1);
+        if (numValue === 'min' && this.config.min) {
+          const minValue = this._getBaseSensorValue(this.config.min, this._hass);
+            lessThanStops[minValue] = effectConfig;
+        } else if (numValue === 'max' && this.config.max) {
+          const maxValue = this._getBaseSensorValue(this.config.max, this._hass);
+            lessThanStops[maxValue] = effectConfig;
+        } else if (numValue.includes('min+') || numValue.includes('min-') || 
+                   numValue.includes('max+') || numValue.includes('max-')) {
+          const parts = numValue.match(/(min|max)([\+\-])([\d.]+)/);
+          if (parts) {
+            const [, base, operator, number] = parts;
+            const baseValue = this._getBaseSensorValue(this.config[base], this._hass);
+            const offset = parseFloat(number);
+            const calculatedKey = operator === '+' 
+              ? baseValue + offset 
+              : baseValue - offset;
+              lessThanStops[calculatedKey] = effectConfig;
+          }
+        } else {
+            lessThanStops[parseFloat(numValue)] = effectConfig;
+        }
+      } else {
+        if (key === 'min' && this.config.min) {
+          const minValue = this._getBaseSensorValue(this.config.min, this._hass);
+            convertedStops[minValue] = effectConfig;
+        } else if (key === 'max' && this.config.max) {
+          const maxValue = this._getBaseSensorValue(this.config.max, this._hass);
+            convertedStops[maxValue] = effectConfig;
+        } else if (key.includes('min+') || key.includes('min-') || 
+                   key.includes('max+') || key.includes('max-')) {
+          const parts = key.match(/(min|max)([\+\-])([\d.]+)/);
+          if (parts) {
+            const [, base, operator, number] = parts;
+            const baseValue = this._getBaseSensorValue(this.config[base], this._hass);
+            const offset = parseFloat(number);
+            const calculatedKey = operator === '+' 
+              ? baseValue + offset 
+              : baseValue - offset;
+              convertedStops[calculatedKey] = effectConfig;
+          }
+        } else {
+            convertedStops[parseFloat(key)] = effectConfig;
+        }
+      }
+    });
+    
+      // Normale Stops prüfen (von hoch nach niedrig)
+      const normalValues = Object.keys(convertedStops).map(Number).sort((a, b) => b - a);
+    for (const stop of normalValues) {
+      if (value >= stop) {
+          // Vollständige Konfiguration aus effect_stops
+          return convertedStops[stop];
+      }
+    }
+    
+      // "Kleiner als" Stops prüfen (von niedrig nach hoch)
+      const lessThanValues = Object.keys(lessThanStops).map(Number).sort((a, b) => a - b);
+    for (const stop of lessThanValues) {
+      if (value < stop) {
+          // Vollständige Konfiguration aus effect_stops
+          return lessThanStops[stop];
+        }
+      }
+    }
+    
+    return null;
+  }
+
   _renderContent() {
-    const rotationStyle = this.config.icon_style?.animation 
+    // Prüfen ob effect_stops für icon WIRKLICH einen Effekt liefern
+    const iconEffectConfig = this._getEffectByValue('icon');
+    const hasActiveEffectStops = iconEffectConfig && iconEffectConfig.type;
+    
+    // Legacy icon_style.animation verwenden wenn KEINE AKTIVEN effect_stops für icon definiert sind
+    const rotationStyle = !hasActiveEffectStops && this.config.icon_style?.animation 
       ? Object.entries(this.config.icon_style.animation)
           .map(([key, value]) => `--rotation-${key}: ${value}`)
           .join(';')
       : '';
 
-    const icon = this.config.icon ? html`
+    // Legacy icon_style effects verwenden wenn KEINE AKTIVEN effect_stops definiert sind
+    const legacyEffectType = this.config.icon_style?.effect;
+    const legacyEffectClasses = !hasActiveEffectStops && legacyEffectType 
+      ? `effect-${legacyEffectType}` 
+      : '';
+    const legacyEffectStyles = !hasActiveEffectStops && legacyEffectType 
+      ? this._getLegacyIconEffectStyles()
+      : '';
+
+    const iconToUse = this._getIconByValue();
+    const icon = iconToUse ? html`
       <ha-icon
-        class="icon ${this.config.icon_style?.animation ? 'rotating' : ''}"
-        .icon="${this.config.icon}"
-        style="${this._computeIconStyles()}; ${rotationStyle}"
+        class="icon ${this._getEffectClasses('icon')} ${legacyEffectClasses}"
+        .icon="${iconToUse}"
+        style="${this._computeIconStyles()}; ${rotationStyle}; ${this._getEffectStyles('icon')}; ${legacyEffectStyles}"
       ></ha-icon>
     ` : '';
 
-    const name = this.config.name != null ? html`<span id="name">${this.config.name}</span>` : '';
+    const name = this.config.name != null ? html`<span id="name" class="${this._getEffectClasses('name')}" style="${this._getEffectStyles('name')}">${this.config.name}</span>` : '';
     
     const value = html`
-      <span class="text">
+      <span class="text ${this._getEffectClasses('value')}" style="${this._getEffectStyles('value')}">
         ${this.config.attribute ? this.state.attributes[this.config.attribute] : this._getStateValue()}
       </span>
-      <span class="unit">
+      <span class="unit ${this._getEffectClasses('unit')}" style="${this._getEffectStyles('unit')}">
         ${this._getUnitLabel()}
       </span>
     `;
