@@ -32,6 +32,9 @@ This is a mod, created wit ai. All credits to the original creator. I spent a ni
 | attribute | string | Attribute element of entity to use instead of its state | none
 | attribute_max | string | Use attribute element of entity as max | none
 | show_max | boolean | Display the max value | `false`
+| icon_stops | object | Change icon based on sensor value | none
+| icon_color_stops | object | Change icon color based on sensor value | none
+| effect_stops | object | Apply effects based on sensor value | none
 
 ### Color stops
 A mapping from `value` to `color`. If `gradient` is set to true, mid-stop colors will be
@@ -129,22 +132,105 @@ Add a custom card or custom element in your `ui-lovelace.yaml` using `type: cust
     opacity: '0.9'
     filter: 'drop-shadow(0px 0px 2px rgba(0,0,0,0.2))'
     margin: '6px'
-    # Icon Animation
+    # Icon Effects
+    effect: 'rotate'       # Effect type: pulse, shake, bounce, fade, rotate, wobble
     animation:
-      duration: '2s'       # Time per rotation
-      timing: 'linear'     # Animation curve
-      iteration: 'infinite'  # Number of repeats
+      duration: '2s'       # Animation duration
+      timing: 'linear'     # Animation timing
+      delay: '0s'          # Animation delay
+      iteration: 'infinite' # Number of iterations
+      direction: 'normal'  # Animation direction
+      # Effect-specific options
+      opacity_min: 0.7     # For pulse effect
+      opacity_max: 1.0     # For pulse effect
+      scale_min: 0.9       # For pulse effect
+      scale_max: 1.1       # For pulse effect
+      color1: '#ff0000'    # For fade effect
+      color2: '#00ff00'    # For fade effect
+      rotate_min: -15      # For wobble effect (degrees)
+      rotate_max: 15       # For wobble effect (degrees)
   
   # Icon Color Stops - Same syntax as circle color_stops
   icon_color_stops:
-    "<min": blue
+    10: blue
     "min+5": green
-    "max": red
+    "<max": red
+
+  # Icon Stops - Change icon based on sensor value
+  icon_stops:
+    15: 'mdi:thermometer-low'
+    "max": 'mdi:thermometer-high'
+    "<20": 'mdi:fire'
+
+  # Effect Stops - Configure effects based on sensor values
+  effect_stops:
+    icon:
+      25: null                    # No effect when value >= 25
+      "min+10":                   # Pulse effect when value > (min + 10)
+        type: 'pulse'
+        duration: '1s'            # Animation duration (e.g. '1s', '500ms', '2.5s')
+        timing: 'ease-in-out'     # Animation timing (linear, ease, ease-in, ease-out, ease-in-out)
+        delay: '0s'               # Animation delay (e.g. '0s', '500ms', '1s')
+        iteration: 'infinite'     # Number of iterations (infinite, 1, 2, 3, etc.)
+        direction: 'normal'       # Animation direction (normal, reverse, alternate, alternate-reverse)
+        opacity_min: 0.7          # Minimum opacity for pulse effect
+        opacity_max: 1.0          # Maximum opacity for pulse effect
+        scale_min: 0.9            # Minimum scale for pulse effect
+        scale_max: 1.1            # Maximum scale for pulse effect
+      "<max":                     # Wobble effect when value < max
+        type: 'wobble'
+        duration: '0.5s'
+        timing: 'ease-in-out'
+        iteration: 'infinite'
+        rotate_min: -20           # Minimum rotation angle for wobble effect (degrees)
+        rotate_max: 20            # Maximum rotation angle for wobble effect (degrees)
+    name:
+      20:                         # Fade effect for name when value >= 20
+        type: 'fade'
+        duration: '3s'
+        timing: 'ease-in-out'
+        iteration: 'infinite'
+        color1: 'var(--primary-text-color)'
+        color2: 'orange'
+    value:
+      30:                         # Pulse effect for value when value >= 30
+        type: 'pulse'
+        duration: '1.5s'
+        timing: 'ease-in-out'
+        iteration: 'infinite'
+        opacity_min: 0.6
+        opacity_max: 1.0
+        scale_min: 0.95
+        scale_max: 1.05
+      "max-5":                    # Bounce effect for value when value > (max - 5)
+        type: 'bounce'
+        duration: '1s'
+        timing: 'ease-in-out'
+        iteration: 'infinite'
+    unit:
+      35:                         # Wobble effect for unit when value >= 35
+        type: 'wobble'
+        duration: '2s'
+        timing: 'ease-in-out'
+        iteration: 'infinite'
+        rotate_min: -10
+        rotate_max: 10
+    ring:
+      "<35":                      # Pulse effect for ring when value < 35
+        type: 'pulse'
+        duration: '2s'
+        timing: 'ease-in-out'
+        iteration: 'infinite'
+        opacity_min: 0.4
+        opacity_max: 1.0
+        scale_min: 0.9
+        scale_max: 1.2
   
   # Text Styling
   font_style:
+    name_size: '120%'      # Size of the name
     value_size: '150%'     # Size of the value
-    unit_size: '75%'      # Size of the unit
+    unit_size: '75%'       # Size of the unit
     color: 'red'
     font-weight: 'bold'
     font-family: 'Trebuchet MS'
@@ -158,3 +244,7 @@ Add a custom card or custom element in your `ui-lovelace.yaml` using `type: cust
     --circle-sensor-width: 200px
     --circle-sensor-height: 200px
 ```
+
+
+
+
