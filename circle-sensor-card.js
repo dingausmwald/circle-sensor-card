@@ -120,6 +120,7 @@ class CircleSensorCard extends LitElement {
         align-items: center;
         justify-content: center;
         gap: 4px;
+        font-size: var(--base-font-size, 16px);
       }
       
       #label {
@@ -152,6 +153,9 @@ class CircleSensorCard extends LitElement {
         margin: 4px;
         color: var(--primary-text-color);
         --mdc-icon-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       
       /* Neue Animation definieren */
@@ -365,6 +369,17 @@ class CircleSensorCard extends LitElement {
     if (this.config) {
       this._updateConfig();
     }
+
+    // Initiale Berechnung der Basis-Schriftgröße
+    this._updateBaseFontSize();
+
+    // Beobachter für Größenänderungen der Karte
+    if (!this._resizeObserver) {
+      this._resizeObserver = new ResizeObserver(() => {
+        this._updateBaseFontSize();
+      });
+      this._resizeObserver.observe(this);
+    }
   }
 
   setConfig(config) {
@@ -399,6 +414,7 @@ class CircleSensorCard extends LitElement {
     }
     
     this._updateConfig();
+    this._updateBaseFontSize();
   }
 
   getCardSize() {
@@ -995,11 +1011,13 @@ class CircleSensorCard extends LitElement {
 
     const iconToUse = this._getIconByValue();
     const icon = iconToUse ? html`
-      <ha-icon
-        class="icon ${this._getEffectClasses('icon')} ${legacyEffectClasses}"
-        .icon="${iconToUse}"
-        style="${this._computeIconStyles()}; ${rotationStyle}; ${this._getEffectStyles('icon')}; ${legacyEffectStyles}"
-      ></ha-icon>
+      <div class="icon-wrapper" style="line-height: 0; display: inline-block;">
+        <ha-icon
+          class="icon ${this._getEffectClasses('icon')} ${legacyEffectClasses}"
+          .icon="${iconToUse}"
+          style="${this._computeIconStyles()}; ${rotationStyle}; ${this._getEffectStyles('icon')}; ${legacyEffectStyles}"
+        ></ha-icon>
+      </div>
     ` : '';
 
     const name = this.config.name != null ? html`<span id="name" class="${this._getEffectClasses('name')}" style="${this._getEffectStyles('name')}">${this.config.name}</span>` : '';
@@ -1076,6 +1094,32 @@ class CircleSensorCard extends LitElement {
         this.removeAttribute('no-card');
       }
     }
+  }
+
+  connectedCallback() {
+    super.connectedCallback && super.connectedCallback();
+    // Sicherstellen, dass die Basisgröße bei (Re-)Attach aktualisiert wird
+    this._updateBaseFontSize();
+    if (this._resizeObserver && this.isConnected) {
+      this._resizeObserver.observe(this);
+    }
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback && super.disconnectedCallback();
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+    }
+  }
+
+  _updateBaseFontSize() {
+    const container = this.shadowRoot?.querySelector('.container');
+    const rect = container ? container.getBoundingClientRect() : this.getBoundingClientRect();
+    if (!rect || !rect.width || !rect.height) return;
+    const size = Math.min(rect.width, rect.height);
+    // Basis-Schriftgröße proportional zur Kartengröße
+    const base = Math.max(10, Math.round(size * 0.08));
+    this.style.setProperty('--base-font-size', `${base}px`);
   }
 
   _getValue(value, hass) {
