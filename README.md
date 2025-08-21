@@ -35,6 +35,9 @@ This is a mod, created wit ai. All credits to the original creator. I spent a ni
 | icon_stops | object | Change icon based on sensor value | none
 | icon_color_stops | object | Change icon color based on sensor value | none
 | effect_stops | object | Apply effects based on sensor value | none
+| tap_action | object | Action on tap (more-info, navigate, url, call-service, none) | `more-info` (default if unset)
+| hold_action | object | Action on hold (more-info, navigate, url, call-service, none) | none
+| double_tap_action | object | Action on double tap (more-info, navigate, url, call-service, none) | none
 
 ### Color stops
 A mapping from `value` to `color`. If `gradient` is set to true, mid-stop colors will be
@@ -243,6 +246,18 @@ Add a custom card or custom element in your `ui-lovelace.yaml` using `type: cust
   style:
     --circle-sensor-width: 200px
     --circle-sensor-height: 200px
+
+  # Actions (placed last; behavior options)
+  tap_action:
+    action: more-info
+  hold_action:
+    action: call-service
+    service: switch.toggle
+    target:
+      entity_id: switch.living_room
+  double_tap_action:
+    action: navigate
+    navigation_path: /dashboard
 ```
 
 
