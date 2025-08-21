@@ -259,7 +259,13 @@ Add a custom card or custom element in your `ui-lovelace.yaml` using `type: cust
     action: navigate
     navigation_path: /dashboard
 ```
+## ☕ Support
 
+If you find this project helpful, consider supporting its development:
+
+<a href="https://buymeacoffee.com/dingausmwald" target="_blank">
+<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 50px !important;">
+</a>
 
 
 
