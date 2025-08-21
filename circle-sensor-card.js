@@ -15,7 +15,7 @@ class CircleSensorCard extends LitElement {
 
   render() {
     const content = html`
-      <div class="container" @click="${this._click}">
+      <div class="container" @action="${this._handleAction}">
         <svg viewbox="0 0 200 200" id="svg">
           <!-- Definitionen für Filter und Gradienten -->
           <defs>
@@ -380,6 +380,8 @@ class CircleSensorCard extends LitElement {
       });
       this._resizeObserver.observe(this);
     }
+    // Enable HA action handling (tap/hold/double-tap)
+    this._bindActionHandler();
   }
 
   setConfig(config) {
@@ -387,7 +389,11 @@ class CircleSensorCard extends LitElement {
       throw Error('No entity defined')
     }
     
-    this.config = config;
+    // Merge defaults for standard HA actions
+    this.config = {
+      tap_action: { action: 'more-info' },
+      ...config
+    };
     
     if (this.hasUpdated) {
       this._applyConfig();
@@ -496,6 +502,44 @@ class CircleSensorCard extends LitElement {
 
   _click() {
     this._fire('hass-more-info', { entityId: this.config.entity });
+  }
+
+  // Attach HA action-handler to the clickable container
+  _bindActionHandler() {
+    const container = this.shadowRoot?.querySelector('.container');
+    if (!container) return;
+    let actionHandler = document.body.querySelector('action-handler');
+    if (!actionHandler) {
+      actionHandler = document.createElement('action-handler');
+      document.body.appendChild(actionHandler);
+    }
+    actionHandler.bind(container, {
+      hasHold: this._hasHold(),
+      hasDoubleClick: this._hasDoubleClick()
+    });
+  }
+
+  _hasHold() {
+    const cfg = this.config?.hold_action;
+    return !!(cfg && cfg.action && cfg.action !== 'none');
+  }
+
+  _hasDoubleClick() {
+    const cfg = this.config?.double_tap_action;
+    return !!(cfg && cfg.action && cfg.action !== 'none');
+  }
+
+  async _handleAction(ev) {
+    const action = ev?.detail?.action;
+    if (!action) return;
+
+    // Default behavior: if no tap_action configured, show more-info on tap
+    if (action === 'tap' && !this.config?.tap_action) {
+      this._fire('hass-more-info', { entityId: this.config.entity });
+      return;
+    }
+    // Delegate to HA action system
+    this._fire('hass-action', { config: this.config, action });
   }
 
   _calculateStrokeColor(state, stops, isIcon = false, hass) {
@@ -1094,6 +1138,8 @@ class CircleSensorCard extends LitElement {
         this.removeAttribute('no-card');
       }
     }
+    // Re-bind to reflect changes in hold/double-tap availability
+    this._bindActionHandler();
   }
 
   connectedCallback() {
