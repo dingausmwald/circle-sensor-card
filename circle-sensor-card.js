@@ -7,9 +7,8 @@ class CircleSensorCard extends LitElement {
     return {
       hass: { type: Object },
       config: { type: Object },
-      state: { type: Object },
-      dashArray: { type: String },
-      _hass: { type: Object }
+      _stateValue: { type: Object },
+      _dashArray: { type: String },
     }
   }
 
@@ -54,7 +53,7 @@ class CircleSensorCard extends LitElement {
             r="45%"
             fill="${this.config.fill || 'rgba(255, 255, 255, .75)'}"
             stroke="${this.config.use_gradient ? 'url(#circle-gradient)' : (this.config.stroke_color || '#03a9f4')}"
-            stroke-dasharray="${this.dashArray}"
+            stroke-dasharray="${this._dashArray}"
             stroke-width="${this.config.stroke_width || 6}"
             stroke-linecap="${this.config.stroke_linecap || 'butt'}"
             filter="${this.config.use_shadow ? 'url(#circle-shadow)' : 'none'}"
@@ -107,6 +106,10 @@ class CircleSensorCard extends LitElement {
       svg {
         width: 100%;
         height: 100%;
+      }
+
+      #circle {
+        transition: stroke-dasharray 1s ease, stroke 0.5s ease;
       }
 
       .labelContainer {
@@ -401,10 +404,10 @@ class CircleSensorCard extends LitElement {
   }
 
   _applyConfig() {
-    if (this.state && this._hass) {
+    if (this._stateValue && this._hass) {
       const state = this.config.attribute
-        ? this.state.attributes[this.config.attribute]
-        : this.state.state;
+        ? this._stateValue.attributes[this.config.attribute]
+        : this._stateValue.state;
       
       let colorStops = {};
       if (this.config.color_stops) {
@@ -456,36 +459,28 @@ class CircleSensorCard extends LitElement {
 
   set hass(hass) {
     this._hass = hass;
-    const oldState = this.state;
-    this.state = hass.states[this.config.entity];
+    const oldState = this._stateValue;
+    this._stateValue = hass.states[this.config.entity];
 
-    if (oldState === this.state) {
+    if (oldState === this._stateValue) {
       return;
     }
 
-    if (this.config.attribute) {
-      if (!this.state.attributes[this.config.attribute] ||
-          isNaN(this.state.attributes[this.config.attribute])) {
-        console.error(`Attribute [${this.config.attribute}] is not a number`);
-        return;
-      }
-    } else {
-      if (!this.state || isNaN(this.state.state)) {
-        console.error(`State is not a number`);
-        return;
-      }
-    }
+    if (!this._stateValue) return;
 
-    const state = this.config.attribute
-      ? this.state.attributes[this.config.attribute]
-      : this.state.state;
+    const rawState = this.config.attribute
+      ? this._stateValue.attributes[this.config.attribute]
+      : this._stateValue.state;
+    const state = Number(rawState);
+
+    if (isNaN(state)) return;
     const r = 200 * .45;
     const min = this._getValue(this.config.min, hass);
     const max = this._getValue(this.config.max, hass);
     const val = this._calculateValueBetween(min, max, state);
     const score = val * 2 * Math.PI * r;
     const total = 10 * r;
-    this.dashArray = `${score} ${total}`;
+    this._dashArray = `${score} ${total}`;
 
     let colorStops = {};
     if (this.config.color_stops) {
@@ -497,6 +492,7 @@ class CircleSensorCard extends LitElement {
       colorStops[min] = this.config.stroke_color || '#03a9f4';
     }
 
+    this._currentStrokeColor = this._calculateStrokeColor(state, colorStops, false, hass);
     this._updateCircleColor(state, colorStops, hass);
   }
 
@@ -676,9 +672,11 @@ class CircleSensorCard extends LitElement {
     }
     
     if (!color.startsWith('#')) {
-      const ctx = document.createElement('canvas').getContext('2d');
-      ctx.fillStyle = color;
-      color = ctx.fillStyle;
+      if (!CircleSensorCard._colorCtx) {
+        CircleSensorCard._colorCtx = document.createElement('canvas').getContext('2d');
+      }
+      CircleSensorCard._colorCtx.fillStyle = color;
+      color = CircleSensorCard._colorCtx.fillStyle;
     }
 
     let c = color.substr(1);
@@ -710,45 +708,50 @@ class CircleSensorCard extends LitElement {
 
   _getUnitLabel() {
     if (this.config.show_max) {
-      return html`&nbsp;/ ${this.config.attribute_max ? this.state.attributes[this.config.attribute_max] : this.config.max}`;
+      return html`&nbsp;/ ${this.config.attribute_max ? this._stateValue.attributes[this.config.attribute_max] : this.config.max}`;
     } else if (this.config.units) {
       return this.config.units;
-    } else if (this.state?.attributes?.unit_of_measurement) {
-      return this.state.attributes.unit_of_measurement;
+    } else if (this._stateValue?.attributes?.unit_of_measurement) {
+      return this._stateValue.attributes.unit_of_measurement;
     } else {
       return '';
     }
   }
 
   _computeIconStyles() {
-    const styles = { ...this.config.icon_style } || {};
-    
-    if (this.state && this.config.icon_color_stops && Object.keys(this.config.icon_color_stops).length > 0 && this._hass) {
-      const value = this.config.attribute 
-        ? this.state.attributes[this.config.attribute] 
-        : this.state.state;
-      
-      let iconStops = {};
-      Object.entries(this.config.icon_color_stops).forEach(([key, value]) => {
-        iconStops[key] = value;
-      });
-      
-      styles.color = this._calculateStrokeColor(value, iconStops, true, this._hass);
+    const styles = { ...(this.config.icon_style || {}) };
+
+    if (this._stateValue && this._hass) {
+      const value = this.config.attribute
+        ? this._stateValue.attributes[this.config.attribute]
+        : this._stateValue.state;
+
+      if (this.config.icon_color_stops && Object.keys(this.config.icon_color_stops).length > 0) {
+        // Eigene icon_color_stops verwenden
+        let iconStops = {};
+        Object.entries(this.config.icon_color_stops).forEach(([key, colorVal]) => {
+          iconStops[key] = colorVal;
+        });
+        styles.color = this._calculateStrokeColor(value, iconStops, true, this._hass);
+      } else if (this._currentStrokeColor) {
+        // Sonst automatisch die Circle-Farbe übernehmen
+        styles.color = this._currentStrokeColor;
+      }
     }
-    
+
     return Object.entries(styles)
       .map(([key, value]) => `${key}: ${value}`)
       .join(';');
   }
 
   _getIconByValue() {
-    if (!this.state || !this.config.icon_stops || !this._hass) {
+    if (!this._stateValue || !this.config.icon_stops || !this._hass) {
       return this.config.icon;
     }
 
     const value = this.config.attribute 
-      ? this.state.attributes[this.config.attribute] 
-      : this.state.state;
+      ? this._stateValue.attributes[this.config.attribute] 
+      : this._stateValue.state;
 
     const convertedStops = {};
     const lessThanStops = {};
@@ -952,10 +955,10 @@ class CircleSensorCard extends LitElement {
       return null;
     }
 
-    if (this.state && this._hass) {
+    if (this._stateValue && this._hass) {
     const value = this.config.attribute 
-      ? this.state.attributes[this.config.attribute] 
-      : this.state.state;
+      ? this._stateValue.attributes[this.config.attribute] 
+      : this._stateValue.state;
 
       const convertedStops = {};
       const lessThanStops = {};
@@ -1068,7 +1071,7 @@ class CircleSensorCard extends LitElement {
     
     const value = html`
       <span class="text ${this._getEffectClasses('value')}" style="${this._getEffectStyles('value')}">
-        ${this.config.attribute ? this.state.attributes[this.config.attribute] : this._getStateValue()}
+        ${this.config.attribute ? this._stateValue.attributes[this.config.attribute] : this._getStateValue()}
       </span>
       <span class="unit ${this._getEffectClasses('unit')}" style="${this._getEffectStyles('unit')}">
         ${this._getUnitLabel()}
@@ -1118,10 +1121,10 @@ class CircleSensorCard extends LitElement {
   }
 
   _getStateValue() {
-    if (this.state === undefined) {
+    if (this._stateValue === undefined) {
       return 0;
     }
-    const value = Number(this.state.state);
+    const value = Number(this._stateValue.state);
     return this.config.decimals !== undefined 
       ? value.toFixed(this.config.decimals) 
       : value;
@@ -1137,9 +1140,9 @@ class CircleSensorCard extends LitElement {
       } else {
         this.removeAttribute('no-card');
       }
+      // Re-bind action handler when config changes
+      this._bindActionHandler();
     }
-    // Re-bind to reflect changes in hold/double-tap availability
-    this._bindActionHandler();
   }
 
   connectedCallback() {
@@ -1192,7 +1195,7 @@ class CircleSensorCard extends LitElement {
       // Attribut-Referenz
       if (value.startsWith('attr:')) {
         const attr = value.substr(5);
-        return Number(this.state?.attributes[attr]) || 0;
+        return Number(this._stateValue?.attributes[attr]) || 0;
       }
       
       return parseFloat(value) || 0;
