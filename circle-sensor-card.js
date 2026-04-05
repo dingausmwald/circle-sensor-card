@@ -132,10 +132,6 @@ class CircleSensorCard extends LitElement {
         align-items: center;
       }
       
-      #label.bold {
-        font-weight: bold;
-      }
-      
       #label, #name {
         margin: 1% 0;
       }
@@ -146,16 +142,18 @@ class CircleSensorCard extends LitElement {
       
       #name {
         font-size: var(--name-font-size, 100%);
+        color: var(--name-color, inherit);
       }
-      
+
       .unit {
         font-size: 75%;
+        color: var(--unit-color, inherit);
       }
       
       .icon {
         margin: 4px;
         color: var(--primary-text-color);
-        --mdc-icon-size: 20px;
+        --mdc-icon-size: var(--icon-size, 20px);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -360,10 +358,12 @@ class CircleSensorCard extends LitElement {
       
       .text {
         font-size: var(--value-font-size, 100%);
+        color: var(--value-color, inherit);
       }
-      
+
       .unit {
         font-size: var(--unit-font-size, 75%);
+        color: var(--unit-color, inherit);
       }
     `;
   }
@@ -444,6 +444,12 @@ class CircleSensorCard extends LitElement {
           this.style.setProperty('--unit-font-size', this.config.font_style.unit_size);
         } else if (prop === 'name_size') {
           this.style.setProperty('--name-font-size', this.config.font_style.name_size);
+        } else if (prop === 'name_color') {
+          this.style.setProperty('--name-color', this.config.font_style.name_color);
+        } else if (prop === 'value_color') {
+          this.style.setProperty('--value-color', this.config.font_style.value_color);
+        } else if (prop === 'unit_color') {
+          this.style.setProperty('--unit-color', this.config.font_style.unit_color);
         } else {
           container.style.setProperty(prop, this.config.font_style[prop]);
         }
@@ -1083,7 +1089,7 @@ class CircleSensorCard extends LitElement {
         return html`
           ${name}
           ${icon}
-          <span id="label" class="${!!this.config.name ? 'bold' : ''}">
+          <span id="label" class="">
             ${value}
           </span>
         `;
@@ -1091,14 +1097,14 @@ class CircleSensorCard extends LitElement {
         return html`
           ${icon}
           ${name}
-          <span id="label" class="${!!this.config.name ? 'bold' : ''}">
+          <span id="label" class="">
             ${value}
           </span>
         `;
       case 'below':
         return html`
           ${name}
-          <span id="label" class="${!!this.config.name ? 'bold' : ''}">
+          <span id="label" class="">
             ${value}
           </span>
           ${icon}
@@ -1106,14 +1112,14 @@ class CircleSensorCard extends LitElement {
       case 'right':
         return html`
           ${name}
-          <span id="label" class="${!!this.config.name ? 'bold' : ''}">
+          <span id="label" class="">
             ${value}${icon}
           </span>
         `;
       default: // 'left'
         return html`
           ${name}
-          <span id="label" class="${!!this.config.name ? 'bold' : ''}">
+          <span id="label" class="">
             ${icon}${value}
           </span>
         `;
@@ -1169,6 +1175,16 @@ class CircleSensorCard extends LitElement {
     // Basis-Schriftgröße proportional zur Kartengröße
     const base = Math.max(10, Math.round(size * 0.08));
     this.style.setProperty('--base-font-size', `${base}px`);
+    this.style.setProperty('--circle-size', `${size}px`);
+    const iconSize = this.config.icon_style?.icon_size;
+    if (iconSize) {
+      const sizeStr = String(iconSize);
+      if (sizeStr.endsWith('%')) {
+        this.style.setProperty('--icon-size', `${size * parseFloat(sizeStr) / 100}px`);
+      } else {
+        this.style.setProperty('--icon-size', sizeStr);
+      }
+    }
   }
 
   _getValue(value, hass) {
